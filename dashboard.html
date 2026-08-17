@@ -103,7 +103,7 @@
       
       // Gera o link exclusivo do criador usando a URL base + ID do criador
       const baseUrl = window.location.origin;
-      const shareUrl = `${baseUrl}/index.html?c=${session.user.id}`;
+      const shareUrl = `${baseUrl}/?c=${session.user.id}`;
       document.getElementById('shareLink').value = shareUrl;
 
       fetchContacts();
