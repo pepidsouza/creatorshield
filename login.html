@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CreatorShield - Área do Criador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-6">
+  
+  <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl w-full max-w-md space-y-6 shadow-2xl">
+    <div class="text-center space-y-2">
+      <h1 class="text-2xl font-bold tracking-tight text-white">CreatorShield</h1>
+      <p class="text-xs text-slate-400" id="formTitle">Acesse sua conta para ver seus contatos protegidos</p>
+    </div>
+
+    <!-- Mensagens de Erro/Sucesso -->
+    <div id="alertMsg" class="hidden text-xs p-3 rounded-xl border"></div>
+
+    <form id="authForm" class="space-y-4">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Seu E-mail</label>
+        <input type="email" id="email" required placeholder="seuemail@exemplo.com" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Senha</label>
+        <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+
+      <button type="submit" id="authBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 text-sm">
+        Entrar no Painel
+      </button>
+    </form>
+
+    <div class="text-center pt-2">
+      <button id="toggleBtn" onclick="toggleMode()" class="text-xs text-indigo-400 hover:underline">
+        Não tem uma conta? Cadastre-se gratuitamente
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://pmpsegvbypbuoirtyrt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt'; // Cole sua chave publicavel aqui
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let isSignUp = false;
+
+    function toggleMode() {
+      isSignUp = !isSignUp;
+      document.getElementById('formTitle').innerText = isSignUp ? 'Crie sua conta no CreatorShield' : 'Acesse sua conta para ver seus contatos protegidos';
+      document.getElementById('authBtn').innerText = isSignUp ? 'Criar Minha Conta' : 'Entrar no Painel';
+      document.getElementById('toggleBtn').innerText = isSignUp ? 'Já tem uma conta? Faça login' : 'Não tem uma conta? Cadastre-se gratuitamente';
+      hideAlert();
+    }
+
+    function showAlert(msg, isError = false) {
+      const alert = document.getElementById('alertMsg');
+      alert.innerText = msg;
+      alert.className = `text-xs p-3 rounded-xl border ${isError ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`;
+      alert.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('alertMsg').classList.add('hidden');
+    }
+
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('authBtn');
+
+      btn.disabled = true;
+      btn.innerText = 'Processando...';
+
+      if (isSignUp) {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) {
+          showAlert(error.message, true);
+        } else {
+          showAlert('Conta criada com sucesso! Redirecionando...');
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+        }
+      } else {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          showAlert('E-mail ou senha incorretos.', true);
+        } else {
+          window.location.href = 'dashboard.html';
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerText = isSignUp ? 'Criar Minha Conta' : 'Entrar no Painel';
+    });
+  </script>
+</body>
+</html>
