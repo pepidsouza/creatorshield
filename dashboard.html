@@ -14,30 +14,33 @@
       <span class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></span>
       <h1 class="font-bold text-lg tracking-wide text-white">CreatorShield <span class="text-xs font-normal text-slate-400">v1.0</span></h1>
     </div>
-    <span class="text-xs bg-indigo-600/20 text-indigo-400 px-3 py-1 rounded-full border border-indigo-500/30">Status: Protegido</span>
+    <div class="flex items-center gap-4">
+      <span id="userEmail" class="text-xs text-slate-400 hidden md:inline"></span>
+      <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 border border-red-500/20 bg-red-500/10 px-3 py-1.5 rounded-lg transition">Sair</button>
+    </div>
   </header>
 
   <main class="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-        <p class="text-xs text-slate-400 font-medium">Total de Contatos</p>
+        <p class="text-xs text-slate-400 font-medium">Seus Contatos Salvos</p>
         <p class="text-3xl font-black text-white mt-1" id="totalCount">0</p>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-        <p class="text-xs text-slate-400 font-medium">Segurança da Base</p>
-        <p class="text-3xl font-black text-emerald-400 mt-1">100%</p>
+        <p class="text-xs text-slate-400 font-medium">Segurança da Sua Base</p>
+        <p class="text-3xl font-black text-emerald-400 mt-1">100% Privada</p>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-        <p class="text-xs text-slate-400 font-medium">Status do Banco</p>
-        <p class="text-3xl font-black text-indigo-400 mt-1">Conectado</p>
+        <p class="text-xs text-slate-400 font-medium">Sua Conta</p>
+        <p class="text-3xl font-black text-indigo-400 mt-1">Plano Gratis</p>
       </div>
     </div>
 
     <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 class="text-lg font-bold text-white">Audiência Salva</h2>
-          <p class="text-xs text-slate-400">Dados síncronos em tempo real com o Supabase.</p>
+          <h2 class="text-lg font-bold text-white">Sua Lista de Audiência</h2>
+          <p class="text-xs text-slate-400">Apenas você tem acesso a estes contatos.</p>
         </div>
         <button onclick="exportCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition flex items-center gap-2">
           ⬇ Exportar CSV
@@ -48,15 +51,15 @@
         <table class="w-full text-left text-sm text-slate-300">
           <thead class="text-xs uppercase bg-slate-950/50 text-slate-400 border-b border-slate-800">
             <tr>
-              <th class="py-3 px-4">E-mail</th>
+              <th class="py-3 px-4">E-mail do Fã</th>
               <th class="py-3 px-4">Origem</th>
-              <th class="py-3 px-4">Data</th>
+              <th class="py-3 px-4">Data de Entrada</th>
               <th class="py-3 px-4">Status</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-800/50">
             <tr>
-              <td colspan="4" class="py-4 text-center text-slate-500">Carregando contatos...</td>
+              <td colspan="4" class="py-4 text-center text-slate-500">Carregando seus contatos...</td>
             </tr>
           </tbody>
         </table>
@@ -65,11 +68,23 @@
   </main>
 
   <script>
-    const SUPABASE_URL = 'https://pmpsegvbypsbuoirtyrt.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt';
+    const SUPABASE_URL = 'https://pmpsegvbypbuoirtyrt.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt'; // Cole sua chave publicavel aqui
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let contactsData = [];
+
+    async function checkAuthAndLoad() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      document.getElementById('userEmail').innerText = session.user.email;
+      fetchContacts();
+    }
 
     async function fetchContacts() {
       const { data, error } = await supabaseClient.from('contacts').select('*').order('created_at', { ascending: false });
@@ -84,7 +99,7 @@
 
       const tbody = document.getElementById('tableBody');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">Nenhum contato cadastrado ainda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">Nenhum contato na sua conta ainda.</td></tr>';
         return;
       }
 
@@ -98,6 +113,11 @@
       `).join('');
     }
 
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = 'login.html';
+    }
+
     function exportCSV() {
       if (contactsData.length === 0) return alert('Sem dados para exportar.');
       let csv = "E-mail,Origem,Data\n";
@@ -108,11 +128,11 @@
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.setAttribute('href', url);
-      a.setAttribute('download', 'audiencia_creatorshield.csv');
+      a.setAttribute('download', 'minha_audiencia_creatorshield.csv');
       a.click();
     }
 
-    fetchContacts();
+    checkAuthAndLoad();
   </script>
 </body>
 </html>
