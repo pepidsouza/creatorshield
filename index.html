@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CreatorShield - Proteja sua Audiência</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-white min-h-screen flex flex-col justify-center items-center p-6">
   <main class="max-w-2xl text-center space-y-6">
@@ -21,15 +22,44 @@
       Não fique refém de banimentos por erro de IA ou mudanças bruscas de algoritmo. Guarde seus contatos, automatize backups e monetize diretamente com seus fãs.
     </p>
 
-    <!-- Cole a URL gerada pelo Formspree no atributo action abaixo -->
-    <form action="https://formspree.io/f/xnpagbzr" method="POST" class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-      <input type="email" name="email" required placeholder="Seu e-mail ou do seu canal..." class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1">
-      <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+    <form id="leadForm" class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+      <input type="email" id="emailInput" required placeholder="Seu e-mail ou do seu canal..." class="px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1">
+      <button type="submit" id="submitBtn" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
         Garantir Vaga
       </button>
     </form>
     
-    <p class="text-xs text-slate-500">100% Gratuito para os primeiros 100 criadores cadastrados.</p>
+    <p id="msg" class="text-xs text-slate-500">100% Gratuito para os primeiros 100 criadores cadastrados.</p>
   </main>
+
+  <script>
+    const SUPABASE_URL = 'https://pnpsagvbypsbuxitryrt.supabase.co';
+    const SUPABASE_KEY = 'https://pmpsegvbypsbuoirtyrt.supabase.co/rest/v1/'; 
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value;
+      const btn = document.getElementById('submitBtn');
+      const msg = document.getElementById('msg');
+
+      btn.innerText = 'Salvando...';
+      btn.disabled = true;
+
+      const { error } = await supabaseClient.from('contacts').insert([{ email }]);
+
+      if (error) {
+        msg.innerText = 'Erro ao salvar. Tente novamente.';
+        msg.className = 'text-xs text-red-400';
+      } else {
+        msg.innerText = '✓ Sucesso! Sua vaga foi garantida no banco de dados.';
+        msg.className = 'text-xs text-emerald-400 font-bold';
+        document.getElementById('emailInput').value = '';
+      }
+
+      btn.innerText = 'Garantir Vaga';
+      btn.disabled = false;
+    });
+  </script>
 </body>
 </html>
