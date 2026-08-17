@@ -9,21 +9,21 @@
 </head>
 <body class="bg-slate-950 text-white min-h-screen flex flex-col justify-center items-center p-6">
   <main class="max-w-2xl text-center space-y-6">
-    <span class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase">
+    <span id="badge" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase">
       Para Criadores de Conteúdo
     </span>
     
-    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-100">
+    <h1 id="mainTitle" class="text-4xl md:text-6xl font-black tracking-tight text-slate-100">
       O YouTube não é seu. <br>
       <span class="text-indigo-500">Sua audiência deveria ser.</span>
     </h1>
     
-    <p class="text-slate-400 text-base md:text-lg">
+    <p id="subTitle" class="text-slate-400 text-base md:text-lg">
       Não fique refém de banimentos por erro de IA ou mudanças bruscas de algoritmo. Guarde seus contatos e mantenha o acesso direto aos seus fãs.
     </p>
 
     <form id="leadForm" class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-      <input type="email" id="emailInput" required placeholder="Seu e-mail..." class="px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1">
+      <input type="email" id="emailInput" required placeholder="Seu melhor e-mail..." class="px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 flex-1">
       <button type="submit" id="submitBtn" class="bg-indigo-600 hover:bg-indigo-500 font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
         Garantir Vaga
       </button>
@@ -37,9 +37,17 @@
     const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt'; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Captura o ID do criador que veio na URL (?c=ID_DO_CRIADOR)
+    // Captura o ID do criador da URL (?c=ID_DO_CRIADOR)
     const urlParams = new URLSearchParams(window.location.search);
     const creatorId = urlParams.get('c');
+
+    // Se o visitante veio pelo link de um criador, personaliza a página para o fã
+    if (creatorId) {
+      document.getElementById('badge').innerText = 'Comunidade VIP do Criador';
+      document.getElementById('mainTitle').innerHTML = 'Não perca nenhum vídeo <br><span class="text-indigo-500">deste canal.</span>';
+      document.getElementById('subTitle').innerText = 'Cadastre seu e-mail para receber avisos de novos conteúdos, lives e materiais exclusivos diretamente na sua caixa de entrada.';
+      document.getElementById('submitBtn').innerText = 'Entrar na Lista VIP';
+    }
 
     document.getElementById('leadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -50,7 +58,6 @@
       btn.innerText = 'Salvando...';
       btn.disabled = true;
 
-      // Se veio pelo link de um criador, associa o contato ao user_id dele
       const payload = { email: email };
       if (creatorId) {
         payload.user_id = creatorId;
@@ -63,12 +70,12 @@
         msg.innerText = 'Erro ao salvar. Tente novamente.';
         msg.className = 'text-xs text-red-400';
       } else {
-        msg.innerText = '✓ Sucesso! Você está cadastrado na lista deste criador.';
+        msg.innerText = creatorId ? '✓ Sucesso! Seu e-mail foi cadastrado na lista VIP.' : '✓ Sucesso! Sua vaga foi garantida no banco de dados.';
         msg.className = 'text-xs text-emerald-400 font-bold';
         document.getElementById('emailInput').value = '';
       }
 
-      btn.innerText = 'Garantir Vaga';
+      btn.innerText = creatorId ? 'Entrar na Lista VIP' : 'Garantir Vaga';
       btn.disabled = false;
     });
   </script>
