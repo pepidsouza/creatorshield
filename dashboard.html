@@ -21,6 +21,22 @@
   </header>
 
   <main class="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
+    
+    <!-- Caixa do Link de Captura -->
+    <div class="bg-indigo-950/40 border border-indigo-500/30 p-6 rounded-2xl space-y-3">
+      <div>
+        <h2 class="text-sm font-bold text-indigo-300 uppercase tracking-wider">Seu Link de Captura para o YouTube</h2>
+        <p class="text-xs text-slate-400">Cole este link na descrição dos seus vídeos ou fixado nos comentários para que seus inscritos garantam a vaga.</p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input type="text" id="shareLink" readonly class="bg-slate-950 border border-slate-800 text-slate-300 text-xs px-4 py-3 rounded-xl flex-1 focus:outline-none" value="Carregando seu link...">
+        <button onclick="copyLink()" id="copyBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/20">
+          Copiar Link
+        </button>
+      </div>
+    </div>
+
+    <!-- Indicadores -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
         <p class="text-xs text-slate-400 font-medium">Seus Contatos Salvos</p>
@@ -36,6 +52,7 @@
       </div>
     </div>
 
+    <!-- Tabela de E-mails -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 space-y-4">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -83,6 +100,12 @@
       }
 
       document.getElementById('userEmail').innerText = session.user.email;
+      
+      // Gera o link exclusivo do criador usando a URL base + ID do criador
+      const baseUrl = window.location.origin;
+      const shareUrl = `${baseUrl}/index.html?c=${session.user.id}`;
+      document.getElementById('shareLink').value = shareUrl;
+
       fetchContacts();
     }
 
@@ -99,18 +122,31 @@
 
       const tbody = document.getElementById('tableBody');
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">Nenhum contato na sua conta ainda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-500">Nenhum contato na sua conta ainda. Divulgue seu link!</td></tr>';
         return;
       }
 
       tbody.innerHTML = data.map(item => `
         <tr>
           <td class="py-3 px-4 text-white">${item.email}</td>
-          <td class="py-3 px-4 text-slate-400">${item.source || 'Landing Page'}</td>
+          <td class="py-3 px-4 text-slate-400">${item.source || 'YouTube / Link Direto'}</td>
           <td class="py-3 px-4 text-slate-400">${new Date(item.created_at).toLocaleDateString('pt-BR')}</td>
           <td class="py-3 px-4"><span class="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">${item.status || 'Ativo'}</span></td>
         </tr>
       `).join('');
+    }
+
+    function copyLink() {
+      const input = document.getElementById('shareLink');
+      input.select();
+      document.execCommand('copy');
+      const btn = document.getElementById('copyBtn');
+      btn.innerText = '✓ Copiado!';
+      btn.className = 'bg-emerald-600 text-white font-bold text-xs px-6 py-3 rounded-xl transition';
+      setTimeout(() => {
+        btn.innerText = 'Copiar Link';
+        btn.className = 'bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/20';
+      }, 2000);
     }
 
     async function logout() {
