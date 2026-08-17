@@ -48,8 +48,35 @@
       </div>
       <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
         <p class="text-xs text-slate-400 font-medium">Sua Conta</p>
-        <p class="text-3xl font-black text-indigo-400 mt-1">Plano Gratis</p>
+        <p class="text-3xl font-black text-indigo-400 mt-1">Plano Grátis</p>
       </div>
+    </div>
+
+    <!-- Módulo de Disparo de E-mails -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-lg font-bold text-white">Enviar E-mail para a Audiência</h2>
+        <p class="text-xs text-slate-400">Escreva uma mensagem e envie diretamente para toda a sua lista de inscritos.</p>
+      </div>
+
+      <form id="emailForm" class="space-y-4">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Assunto do E-mail</label>
+          <input type="text" id="emailSubject" required placeholder="Ex: Novo vídeo no canal / Aviso importante!" class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Mensagem</label>
+          <textarea id="emailMessage" rows="5" required placeholder="Escreva o conteúdo da sua mensagem aqui..." class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+          <p id="sendStatus" class="text-xs"></p>
+          <button type="submit" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-600/30">
+            ✉ Enviar Transmissão
+          </button>
+        </div>
+      </form>
     </div>
 
     <!-- Tabela de E-mails -->
@@ -59,7 +86,7 @@
           <h2 class="text-lg font-bold text-white">Sua Lista de Audiência</h2>
           <p class="text-xs text-slate-400">Apenas você tem acesso a estes contatos.</p>
         </div>
-        <button onclick="exportCSV()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition flex items-center gap-2">
+        <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm px-4 py-2 rounded-xl transition flex items-center gap-2 border border-slate-700">
           ⬇ Exportar CSV
         </button>
       </div>
@@ -90,6 +117,7 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let contactsData = [];
+    let currentUserId = null;
 
     async function checkAuthAndLoad() {
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -99,11 +127,11 @@
         return;
       }
 
+      currentUserId = session.user.id;
       document.getElementById('userEmail').innerText = session.user.email;
       
-      // Gera o link exclusivo do criador usando a URL base + ID do criador
       const baseUrl = window.location.origin;
-      const shareUrl = `${baseUrl}/?c=${session.user.id}`;
+      const shareUrl = `${baseUrl}/?c=${currentUserId}`;
       document.getElementById('shareLink').value = shareUrl;
 
       fetchContacts();
@@ -135,6 +163,56 @@
         </tr>
       `).join('');
     }
+
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const subject = document.getElementById('emailSubject').value;
+      const message = document.getElementById('emailMessage').value;
+      const btn = document.getElementById('sendBtn');
+      const status = document.getElementById('sendStatus');
+
+      if (contactsData.length === 0) {
+        status.innerText = '⚠️ Você não tem contatos para enviar.';
+        status.className = 'text-xs text-amber-400 font-bold';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Enviando...';
+      status.innerText = 'Processando disparo...';
+      status.className = 'text-xs text-slate-400';
+
+      try {
+        const response = await fetch('/api/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject,
+            message,
+            userId: currentUserId
+          })
+        });
+
+        const resData = await response.json();
+
+        if (response.ok) {
+          status.innerText = `✓ Sucesso! E-mail enviado para ${resData.count} contato(s).`;
+          status.className = 'text-xs text-emerald-400 font-bold';
+          document.getElementById('emailSubject').value = '';
+          document.getElementById('emailMessage').value = '';
+        } else {
+          status.innerText = `Erro: ${resData.error || 'Falha no envio.'}`;
+          status.className = 'text-xs text-red-400 font-bold';
+        }
+      } catch (err) {
+        status.innerText = 'Erro na conexão com o servidor de e-mail.';
+        status.className = 'text-xs text-red-400 font-bold';
+      }
+
+      btn.disabled = false;
+      btn.innerText = '✉ Enviar Transmissão';
+    });
 
     function copyLink() {
       const input = document.getElementById('shareLink');
