@@ -3,17 +3,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  const { subject, message, userId, token } = req.body;
+  // Garante a leitura correta do body na Vercel
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+  const { subject, message, userId, token } = body;
 
-  if (!subject || !message || !userId || !token) {
-    return res.status(400).json({ error: 'Assunto, mensagem e autenticação são obrigatórios.' });
-  }
+  // Validação detalhada para identificar o campo ausente
+  if (!subject) return res.status(400).json({ error: 'O campo Assunto é obrigatório.' });
+  if (!message) return res.status(400).json({ error: 'O campo Mensagem é obrigatório.' });
+  if (!userId) return res.status(400).json({ error: 'ID do usuário não encontrado. Recarregue a página.' });
+  if (!token) return res.status(400).json({ error: 'Sessão inválida. Faça login novamente.' });
 
   const SUPABASE_URL = 'https://pmpsegvbypsbuoirtyrt.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt';
 
   try {
-    // Busca os e-mails usando o token de autorização do próprio criador logado
+    // Busca os e-mails dos contatos do criador no Supabase
     const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?select=email`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -24,12 +28,12 @@ export default async function handler(req, res) {
     const contacts = await supabaseRes.json();
 
     if (!contacts || contacts.length === 0 || contacts.error) {
-      return res.status(400).json({ error: 'Nenhum contato encontrado na sua lista para enviar.' });
+      return res.status(400).json({ error: 'Nenhum contato encontrado na sua lista.' });
     }
 
     const emailList = contacts.map(c => c.email);
 
-    // Dispara os e-mails via Resend
+    // Disparo dos e-mails via Resend API
     const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
