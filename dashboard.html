@@ -183,6 +183,58 @@
       status.innerText = 'Processando disparo...';
       status.className = 'text-xs text-slate-400';
 
+      // Pega o token da sessão ativa do usuário
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      try {
+        const response = await fetch('/api/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subject,
+            message,
+            userId: currentUserId,
+            token: session?.access_token
+          })
+        });
+
+        const resData = await response.json();
+
+        if (response.ok) {
+          status.innerText = `✓ Sucesso! E-mail enviado para ${resData.count} contato(s).`;
+          status.className = 'text-xs text-emerald-400 font-bold';
+          document.getElementById('emailSubject').value = '';
+          document.getElementById('emailMessage').value = '';
+        } else {
+          status.innerText = `Erro: ${resData.error || 'Falha no envio.'}`;
+          status.className = 'text-xs text-red-400 font-bold';
+        }
+      } catch (err) {
+        status.innerText = 'Erro na conexão com o servidor de e-mail.';
+        status.className = 'text-xs text-red-400 font-bold';
+      }
+
+      btn.disabled = false;
+      btn.innerText = '✉ Enviar Transmissão';
+    });('submit', async (e) => {
+      e.preventDefault();
+      
+      const subject = document.getElementById('emailSubject').value;
+      const message = document.getElementById('emailMessage').value;
+      const btn = document.getElementById('sendBtn');
+      const status = document.getElementById('sendStatus');
+
+      if (contactsData.length === 0) {
+        status.innerText = '⚠️ Você não tem contatos para enviar.';
+        status.className = 'text-xs text-amber-400 font-bold';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'Enviando...';
+      status.innerText = 'Processando disparo...';
+      status.className = 'text-xs text-slate-400';
+
       try {
         const response = await fetch('/api/send', {
           method: 'POST',
