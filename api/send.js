@@ -3,33 +3,33 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  const { subject, message, userId } = req.body;
+  const { subject, message, userId, token } = req.body;
 
-  if (!subject || !message || !userId) {
-    return res.status(400).json({ error: 'Assunto, mensagem e ID do usuário são obrigatórios.' });
+  if (!subject || !message || !userId || !token) {
+    return res.status(400).json({ error: 'Assunto, mensagem e autenticação são obrigatórios.' });
   }
 
   const SUPABASE_URL = 'https://pmpsegvbypsbuoirtyrt.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_8MdEp51LeQmC9ePkknH4BA_pbW8O0gt';
 
   try {
-    // 1. Busca todos os e-mails da lista deste criador no Supabase
-    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?user_id=eq.${userId}&select=email`, {
+    // Busca os e-mails usando o token de autorização do próprio criador logado
+    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/contacts?select=email`, {
       headers: {
         'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
+        'Authorization': `Bearer ${token}`
       }
     });
 
     const contacts = await supabaseRes.json();
 
-    if (!contacts || contacts.length === 0) {
+    if (!contacts || contacts.length === 0 || contacts.error) {
       return res.status(400).json({ error: 'Nenhum contato encontrado na sua lista para enviar.' });
     }
 
     const emailList = contacts.map(c => c.email);
 
-    // 2. Dispara os e-mails utilizando a API do Resend
+    // Dispara os e-mails via Resend
     const resendRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
